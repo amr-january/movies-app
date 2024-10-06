@@ -1,0 +1,32 @@
+name: Deploy To fly.io
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: {}
+jobs:
+  deploy_to_fly:
+    runs-on: ubuntu-latest
+    steps:
+      - id: checkout
+        name: checkout App Repo
+        uses: actions/checkout@v3
+      - id: setup_node
+        uses: actions/setup-node@v3
+        name: Setup Node.js
+        with:
+          node-version: '20'
+          cache: npm
+      - name: Build
+        run: >-
+          npx https://github.com/JanuaryLabs/dist/raw/main/canary.tar.gz
+          generate --no-upgrade
+      - name: Setup Fly.io cli.
+        uses: superfly/flyctl-actions/setup-flyctl@master
+      - id: deploy
+        name: Deploying ...
+        run: >-
+          flyctl deploy --app ${{ secrets.FLY_APP_NAME }} --remote-only --config
+          ./deploy.toml --verbose
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
